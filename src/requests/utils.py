@@ -436,39 +436,22 @@ def parse_list_header(value: str) -> list[str]:
     return result
 
 
-# From mitsuhiko/werkzeug (used with permission).
-def parse_dict_header(value: str) -> dict[str, str | None]:
-    """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
-    convert them into a python dict:
+result: dict[str, str | None] = {}
+for item in _parse_list_header(value):
+    if "=" not in item:
+        result[item.strip()] = None
+        continue
 
-    >>> d = parse_dict_header('foo="is a fish", bar="as well"')
-    >>> type(d) is dict
-    True
-    >>> sorted(d.items())
-    [('bar', 'as well'), ('foo', 'is a fish')]
+    name, value = item.split("=", 1)
+    name = name.strip()
+    value = value.strip()
 
-    If there is no value for a key it will be `None`:
+    if value[:1] == value[-1:] == '"':
+        value = unquote_header_value(value[1:-1])
 
-    >>> parse_dict_header('key_without_value')
-    {'key_without_value': None}
+    result[name] = value
 
-    To create a header from the :class:`dict` again, use the
-    :func:`dump_header` function.
-
-    :param value: a string with a dict header.
-    :return: :class:`dict`
-    :rtype: dict
-    """
-    result: dict[str, str | None] = {}
-    for item in _parse_list_header(value):
-        if "=" not in item:
-            result[item] = None
-            continue
-        name, value = item.split("=", 1)
-        if value[:1] == value[-1:] == '"':
-            value = unquote_header_value(value[1:-1])
-        result[name] = value
-    return result
+return result
 
 
 # From mitsuhiko/werkzeug (used with permission).
